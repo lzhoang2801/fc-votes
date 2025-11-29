@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FChoice 2025 Vote Visualizer - lzhoang2801</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @font-face {
+            font-family: 'SVN-Kallisto';
+            font-style: normal;
+            font-weight: 500;
+            src: url("https://static.mediacdn.vn/fonts/svn-kallisto/SVN-Kallisto-Medium.woff2") format("woff2");
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'SVN-Apparat';
+            font-weight: 400;
+            font-style: normal;
+            src: url("https://static.mediacdn.vn/fonts/svn-apparat/SVN-Apparat-Regular.woff2") format("woff2");
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'SVN-Apparat';
+            font-weight: 500;
+            font-style: normal;
+            src: url("https://static.mediacdn.vn/fonts/svn-apparat/SVN-Apparat-Medium.woff2") format("woff2");
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'SVN-Apparat';
+            font-weight: 700;
+            font-style: normal;
+            src: url("https://static.mediacdn.vn/fonts/svn-apparat/SVN-Apparat-Bold.woff2") format("woff2");
+            font-display: swap;
+        }
+
+        :root {
+            --primary-brown: #5b3612;
+            --dark-brown: #392109;
+            --gold-accent: #d3ad49;
+            --bg-main: #e8e2d6;
+            --bg-section: #f9f8f4;
+        }
+
+        body {
+            font-family: 'SVN-Apparat', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--dark-brown);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            font-family: 'SVN-Kallisto', sans-serif;
+        }
+
+        .fchoice-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            height: 63px;
+            z-index: 99;
+            border-radius: 16px;
+            padding: 10px 35px;
+            display: flex;
+            align-items: center;
+            background: rgba(139, 96, 55, 0.85);
+            backdrop-filter: blur(17.95px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .fchoice-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #8b6037;
+            border-radius: 16px;
+            z-index: -2;
+            opacity: 0.8;
+        }
+
+        .hero-title {
+            font-size: 38px;
+            line-height: 1.2;
+            color: var(--dark-brown);
+            margin-bottom: 20px;
+        }
+
+        .hero-desc {
+            font-size: 16px;
+            line-height: 1.3;
+            color: var(--primary-brown);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .fchoice-card {
+            background: var(--bg-section);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .ranking-card {
+            background: linear-gradient(0deg, #f9e2a8 0, #f1ba80 33.33%, #b07d51 66.67%, #583410 100%), #c08e61;
+            color: white;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ranking-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("https://static.mediacdn.vn/fchoice/images/dc-t.png") no-repeat top center/contain;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .ranking-item {
+            background: rgba(107, 68, 30, 0.5);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            transition: transform 0.2s;
+        }
+
+        .ranking-item:hover {
+            transform: translateY(-2px);
+            background: rgba(107, 68, 30, 0.7);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(91, 54, 18, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(91, 54, 18, 0.5);
+        }
+
+        .control-select {
+            background: #f8f8f8 url("https://static.mediacdn.vn/fchoice/images/ctrl-down.svg") no-repeat right 16px center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 8px 34px 8px 15px;
+            font-family: 'SVN-Apparat', sans-serif;
+            font-weight: 600;
+            color: #004370;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-brown);
+            color: white;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-gold {
+            background: var(--gold-accent);
+            color: var(--primary-brown);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="fchoice-header">
+        <a href="#" class="logo">
+            <img src="https://static.mediacdn.vn/fchoice/images/logo.svg" alt="FChoice Logo" style="width: 127px;">
+        </a>
+        <div class="ml-auto flex items-center gap-4">
+            <span class="text-white text-xs font-medium uppercase hidden sm:block">FChoice 2025 Vote Visualizer</span>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pb-12 pt-32">
+
+        <div class="text-center mb-6 sm:mb-10">
+            <h1 class="hero-title text-[#392109] mb-4 px-2">Theo dõi trực quan diễn biến bình chọn FChoice Awards 2025.</h1>
+        </div>
+
+        <div
+            class="fchoice-card mb-6 sm:mb-8 flex flex-wrap gap-3 sm:gap-4 items-center justify-between bg-[#f9f8f4]/95 backdrop-blur-sm border border-[#5b3612]/10">
+            <div class="flex flex-wrap gap-3 sm:gap-4 items-center w-full justify-between">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <span class="text-[#392109] text-base sm:text-lg font-bold uppercase tracking-wide">Ngân hàng Kim chủ của năm</span>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <label class="text-[#353535] text-xs sm:text-sm font-medium uppercase tracking-wide">Thời gian:</label>
+                    <select id="timeRange" class="control-select flex-1 sm:flex-none">
+                        <option value="15m" selected>15 Phút</option>
+                        <option value="30m">30 Phút</option>
+                        <option value="1h">1 Giờ</option>
+                        <option value="all">Tất cả</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[400px] sm:min-h-[600px]">
+
+            <div class="lg:col-span-4">
+                <div class="ranking-card p-4 sm:p-6 h-full flex flex-col">
+                    <div class="text-center mb-4 sm:mb-6 relative z-10">
+                        <h2 id="rankingTitle" class="text-xl sm:text-2xl font-medium uppercase tracking-wider text-white mt-4 sm:mt-10">Bảng Xếp Hạng</h2>
+                        <p class="text-white/80 text-xs sm:text-sm mt-2">Cập nhật theo thời gian thực</p>
+                    </div>
+
+                    <div id="rankingList" class="flex-1 overflow-y-auto pr-2 relative z-10 space-y-3">
+                        <div class="text-center text-white/60 py-10">Đang tải dữ liệu...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8">
+                <div class="fchoice-card h-full flex flex-col">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
+                        <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
+                        <div class="text-xs sm:text-sm text-[#5b3612]">
+                            <span id="lastUpdate">Cập nhật: --:--:--</span>
+                        </div>
+                    </div>
+
+                    <div id="chartContainer" class="flex-1 w-full min-h-[300px] sm:min-h-[500px]"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="mt-10 py-10 bg-white border-t border-[#5b3612]/10">
+        <div class="container mx-auto px-4 text-center">
+            <img src="https://static.mediacdn.vn/fchoice/images/logo-2.svg" alt="FChoice" class="h-12 mx-auto mb-6">
+            <p class="text-[#392109] text-sm">© 2025 lzhoang2801. Dữ liệu được tổng hợp từ 29-11-2025 21:47:30.</p>
+        </div>
+    </footer>
+
+    <script>
+        class VoteVisualizer {
+            constructor() {
+                this.apiUrl = 'https://vasp-pain.org/get_votes';
+                this.voteHistory = null;
+                this.lastUpdateTime = null;
+                this.voteChart = null;
+                this.timeRange = '15m';
+
+                this.nomineeData = {
+                    "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg" },
+                    "w27-80": { name: "Chuỗi concert G-DRAGON - VPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logovpb-17640426113382097448848.png" },
+                    "w27-83": { name: "Anh Trai Vượt Ngàn Chông Gai - Techcombank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/29/photo2025-11-2817-17-50-2-17643880977201950529428.jpg" },
+                    "w27-78": { name: "Live Concert 2025 - See The Light - SeABank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-62-17640822516411947393111.jpg" },
+                    "w27-79": { name: "Anh Trai Say Hi - VIB", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/28/photo2025-11-2810-12-52-17642997610201243588107.jpg" },
+                    "w27-81": { name: "Sao Nhập Ngũ - MBBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-40-1764057371955171660827.jpg" }
+                };
+
+                this.initializeElements();
+                this.setupEventListeners();
+                this.fetchVoteHistory();
+
+                setInterval(() => this.fetchVoteHistory(), 10000);
+            }
+
+            initializeElements() {
+                this.rankingList = document.getElementById('rankingList');
+                this.chartContainer = document.getElementById('chartContainer');
+                this.rankingTitle = document.getElementById('rankingTitle');
+                this.lastUpdateSpan = document.getElementById('lastUpdate');
+
+                this.voteChart = echarts.init(this.chartContainer);
+
+                window.addEventListener('resize', () => {
+                    this.voteChart.resize();
+                    this.updateChart();
+                });
+            }
+
+            setupEventListeners() {
+                document.getElementById('timeRange').addEventListener('change', (e) => {
+                    this.timeRange = e.target.value;
+                    this.updateChart();
+                });
+            }
+
+            async fetchVoteHistory() {
+                try {
+                    let url = this.apiUrl;
+                    if (this.voteHistory && this.lastUpdateTime) {
+                        url += `?last_updated=${encodeURIComponent(this.lastUpdateTime)}`;
+                    } else {
+                        if (!this.voteHistory) {
+                            this.rankingList.innerHTML = '<div class="text-center text-white/60 py-10"><i class="fas fa-spinner fa-spin text-2xl"></i><br>Đang cập nhật...</div>';
+                        }
+                    }
+
+                    const response = await fetch(url);
+                    const rawData = await response.json();
+
+                    if (this.voteHistory && this.lastUpdateTime) {
+                        this.mergeVoteData(rawData.vote_history);
+                    } else {
+                        this.voteHistory = this.transformVoteData(rawData.vote_history);
+                    }
+
+                    if (rawData.last_update_time) {
+                        this.lastUpdateTime = rawData.last_update_time;
+                        this.lastUpdateSpan.textContent = `Cập nhật: ${this.lastUpdateTime}`;
+                    }
+
+                    this.updateRankingList();
+                    this.updateChart();
+                } catch (error) {
+                    console.error('Error fetching history:', error);
+                    if (!this.voteHistory) {
+                        this.rankingList.innerHTML = '<div class="text-center text-white p-4">Lỗi tải dữ liệu. Vui lòng thử lại sau.</div>';
+                    }
+                }
+            }
+
+            mergeVoteData(newRawHistory) {
+                if (!newRawHistory || Object.keys(newRawHistory).length === 0) return;
+
+                const newTimestamps = new Set();
+                Object.values(newRawHistory).forEach(records => {
+                    records.forEach(r => newTimestamps.add(r.timestamp));
+                });
+
+                const sortedNewTimes = Array.from(newTimestamps).sort();
+                if (sortedNewTimes.length === 0) return;
+
+                const nomineeIds = Object.keys(this.nomineeData);
+                
+                let currentValues = {};
+                const historyTimes = Object.keys(this.voteHistory).sort();
+                const lastTime = historyTimes[historyTimes.length - 1];
+                
+                if (lastTime) {
+                    currentValues = { ...this.voteHistory[lastTime] };
+                } else {
+                    nomineeIds.forEach(id => currentValues[id] = 0);
+                }
+
+                sortedNewTimes.forEach(ts => {
+                    this.voteHistory[ts] = {};
+                    nomineeIds.forEach(id => {
+                        const nomineeRecords = newRawHistory[id];
+                        const record = nomineeRecords ? nomineeRecords.find(r => r.timestamp === ts) : null;
+                        
+                        if (record) {
+                            currentValues[id] = record.vote_count;
+                        }
+                        this.voteHistory[ts][id] = currentValues[id] || 0;
+                    });
+                });
+            }
+
+            transformVoteData(rawHistory) {
+                const formattedHistory = {};
+                const allTimestamps = new Set();
+
+                Object.values(rawHistory).forEach(records => {
+                    records.forEach(r => allTimestamps.add(r.timestamp));
+                });
+
+                allTimestamps.forEach(ts => {
+                    formattedHistory[ts] = {};
+                });
+
+                Object.entries(rawHistory).forEach(([nomineeId, records]) => {
+                    records.forEach(record => {
+                        if (formattedHistory[record.timestamp]) {
+                            formattedHistory[record.timestamp][nomineeId] = record.vote_count;
+                        }
+                    });
+                });
+
+                const sortedTimes = Array.from(allTimestamps).sort();
+                const nomineeIds = Object.keys(rawHistory);
+                const lastKnownVotes = {};
+                nomineeIds.forEach(id => lastKnownVotes[id] = 0);
+
+                sortedTimes.forEach(ts => {
+                    nomineeIds.forEach(id => {
+                        if (formattedHistory[ts][id] !== undefined) {
+                            lastKnownVotes[id] = formattedHistory[ts][id];
+                        } else {
+                            formattedHistory[ts][id] = lastKnownVotes[id];
+                        }
+                    });
+                });
+
+                return formattedHistory;
+            }
+
+            updateRankingList() {
+                if (!this.voteHistory) return;
+
+                const times = Object.keys(this.voteHistory).sort();
+                if (times.length === 0) return;
+
+                const latestTime = times[times.length - 1];
+                const currentVotes = this.voteHistory[latestTime];
+
+                const previousTime = times[times.length - 2] || latestTime;
+                const previousVotes = this.voteHistory[previousTime];
+
+                const nomineeIds = Object.keys(this.nomineeData);
+
+                let rankingData = nomineeIds.map(id => {
+                    const nominee = this.nomineeData[id];
+                    const currentVote = currentVotes ? (currentVotes[id] || 0) : 0;
+                    const previousVote = previousVotes ? (previousVotes[id] || 0) : 0;
+                    const voteDifference  = currentVote - previousVote;
+                    return {
+                        id: id,
+                        name: nominee.name,
+                        image: nominee.image,
+                        votes: currentVote,
+                        voteDifference
+                    };
+                });
+
+                rankingData.sort((a, b) => b.votes - a.votes);
+
+                if (rankingData.length === 0) return;
+
+                this.rankingList.innerHTML = '';
+
+                rankingData.forEach((item, index) => {
+                    const isTop1 = index === 0;
+                    const diffText = isTop1 ? `<span class="text-yellow-300 font-bold"><i class="fas fa-crown"></i> Dẫn đầu</span>` :
+                        item.voteDifference > 0 ? `<span class="text-sm text-green-500 font-bold">+${item.voteDifference.toLocaleString()}</span>` :
+                        item.voteDifference < 0 ? `<span class="text-sm text-red-500 font-bold">-${item.voteDifference.toLocaleString()}</span>` :
+                        ``;
+
+                    const div = document.createElement('div');
+                    div.className = `ranking-item ${isTop1 ? 'bg-[#5b3612]/80 border border-[#d3ad49]' : ''}`;
+                    div.innerHTML = `
+                        <div class="w-6 sm:w-8 text-center font-bold text-base sm:text-lg text-[#d3ad49]">${index + 1}</div>
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-[#d3ad49]/50 mx-2 sm:mx-3 shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium text-white truncate text-sm sm:text-base leading-tight">${item.name}</h4>
+                            <div class="flex items-center gap-2 mt-1">
+                                ${diffText}
+                            </div>
+                        </div>
+                        <div class="text-right pl-2 shrink-0">
+                            <div class="font-bold text-lg sm:text-xl text-white">${item.votes.toLocaleString()}</div>
+                            <div class="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#d3ad49]">Lượt bình chọn</div>
+                        </div>
+                    `;
+                    this.rankingList.appendChild(div);
+                });
+            }
+
+            updateChart() {
+                if (!this.voteHistory) return;
+
+                const times = Object.keys(this.voteHistory).sort();
+                if (times.length === 0) return;
+
+                const timeRangeMap = {
+                    '15m': 15 * 60 * 1000,
+                    '30m': 30 * 60 * 1000,
+                    '1h': 60 * 60 * 1000
+                };
+                const timeRangeMillis = timeRangeMap[this.timeRange] || 1;
+
+                const filteredTimes = [];
+                let currentEnd = new Date(times[0]).getTime();
+                let lastTimestamp = null;
+
+                for (let i = 0; i < times.length; i++) {
+                    const ts = times[i];
+                    const tsMillis = new Date(ts).getTime();
+                    if (tsMillis >= currentEnd) {
+                        if (lastTimestamp !== null) {
+                            filteredTimes.push(lastTimestamp);
+                        }
+                        while (currentEnd <= tsMillis) {
+                            currentEnd += timeRangeMillis;
+                        }
+                    }
+                    lastTimestamp = ts;
+                }
+                if (lastTimestamp !== null) {
+                    filteredTimes.push(lastTimestamp);
+                }
+
+                let nomineeIds = Object.keys(this.nomineeData);
+                const isMobile = window.innerWidth < 640;
+                
+                const series = nomineeIds.map(id => {
+                    const data = filteredTimes.map(t => {
+                        const votes = this.voteHistory[t] && this.voteHistory[t][id] ? this.voteHistory[t][id] : 0;
+                        return votes;
+                    });
+
+                    return {
+                        name: this.nomineeData[id].name,
+                        type: 'line',
+                        smooth: true,
+                        showSymbol: false,
+                        data: data,
+                        lineStyle: { width: 3 },
+                        emphasis: { focus: 'series' }
+                    };
+                });
+
+                if (series.length === 0) return;
+                
+                const option = {
+                    backgroundColor: 'transparent',
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: '#d3ad49',
+                        textStyle: { color: '#392109' },
+                        order: 'valueDesc'
+                    },
+                    legend: {
+                        data: nomineeIds.map(id => this.nomineeData[id].name),
+                        bottom: '0%',
+                        icon: 'circle',
+                        itemGap: 15,
+                        textStyle: {
+                            color: '#392109',
+                            fontSize: isMobile ? 10 : 12
+                        },
+                        type: 'scroll'
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '3%',
+                        bottom: '10%',
+                        top: '5%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: filteredTimes.map(t => t.substring(11, 16)),
+                        axisLine: { lineStyle: { color: '#5b3612' } },
+                        axisLabel: { 
+                            color: '#5b3612',
+                            fontSize: isMobile ? 10 : 12,
+                            rotate: isMobile ? 45 : 0
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: {
+                            lineStyle: { color: 'rgba(91, 54, 18, 0.1)' }
+                        },
+                        axisLabel: { 
+                            color: '#5b3612',
+                            fontSize: isMobile ? 10 : 12
+                        }
+                    },
+                    series: series
+                };
+
+                this.voteChart.setOption(option, true);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new VoteVisualizer();
+        });
+    </script>
+</body>
+
+</html>
