@@ -472,7 +472,7 @@
                 rankingData.forEach((item, index) => {
                     const isTop1 = index === 0;
                     const diffText = isTop1 ? `<span class="text-yellow-300 font-bold"><i class="fas fa-crown"></i> Dẫn đầu</span>` :
-                        item.voteDifference > 0 ? `<span class="text-sm text-green-500 font-bold">+${item.voteDifference.toLocaleString()}</span>` :
+                        item.voteDifference > 0 ? `<span class="text-sm text-green-300 font-bold">+${item.voteDifference.toLocaleString()}</span>` :
                         item.voteDifference < 0 ? `<span class="text-sm text-red-500 font-bold">-${item.voteDifference.toLocaleString()}</span>` :
                         ``;
 
