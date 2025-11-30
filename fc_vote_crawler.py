@@ -22,7 +22,7 @@ class FChoiceVoteCrawler:
             "w27-81": "Sao Nhập Ngũ - MBBank"
         }
         self.fc_nominee_lstId = "".join(list(self.fc_nominee_data.keys()))
-        self.api_url = f"https://api.fchoice.vn/vote-token.htm?callback=jQuery35107112410952929137_1764424068454&m=get-vote&lstId={self.fc_nominee_lstId}&_=1764424068455"
+        self.api_url = f"https://api.fchoice.vn/vote-token.htm?m=get-vote&lstId={self.fc_nominee_lstId}&_=1764424068455"
         self.headers = {
             "Referer": "https://fchoice.vn/"
         }
@@ -99,8 +99,6 @@ class FChoiceVoteCrawler:
             timestamp = self.get_current_time()
             response = requests.get(self.api_url, headers=self.headers)
             text = response.text
-            if text.startswith("jQuery"):
-                text = text[text.find("(")+1 : text.rfind(")")]
             data = json.loads(text)
             
             if data["Success"] and data["Data"]:
