@@ -226,17 +226,7 @@
             class="fchoice-card mb-6 sm:mb-8 flex flex-wrap gap-3 sm:gap-4 items-center justify-between bg-[#f9f8f4]/95 backdrop-blur-sm border border-[#5b3612]/10">
             <div class="flex flex-wrap gap-3 sm:gap-4 items-center w-full justify-between">
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <span class="text-[#392109] text-base sm:text-lg font-bold uppercase tracking-wide">Ngân hàng Kim chủ của năm</span>
-                </div>
-
-                <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <label class="text-[#353535] text-xs sm:text-sm font-medium uppercase tracking-wide">Thời gian:</label>
-                    <select id="timeRange" class="control-select flex-1 sm:flex-none">
-                        <option value="15m" selected>15 Phút</option>
-                        <option value="30m">30 Phút</option>
-                        <option value="1h">1 Giờ</option>
-                        <option value="all">Tất cả</option>
-                    </select>
+                    <span class="text-[#392109] text-base sm:text-lg font-bold uppercase tracking-wide">Hạng mục: Ngân hàng Kim chủ của năm</span>
                 </div>
             </div>
         </div>
@@ -265,7 +255,7 @@
                         </div>
                     </div>
 
-                    <div id="chartContainer" class="flex-1 w-full min-h-[300px] sm:min-h-[500px]"></div>
+                    <div id="chartContainer" class="flex-1 w-full min-h-[500px]"></div>
                 </div>
             </div>
 
@@ -286,7 +276,6 @@
                 this.voteHistory = null;
                 this.lastUpdateTime = null;
                 this.voteChart = null;
-                this.timeRange = '15m';
 
                 this.nomineeData = {
                     "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg" },
@@ -298,7 +287,6 @@
                 };
 
                 this.initializeElements();
-                this.setupEventListeners();
                 this.fetchVoteHistory();
 
                 setInterval(() => this.fetchVoteHistory(), 10000);
@@ -314,13 +302,6 @@
 
                 window.addEventListener('resize', () => {
                     this.voteChart.resize();
-                    this.updateChart();
-                });
-            }
-
-            setupEventListeners() {
-                document.getElementById('timeRange').addEventListener('change', (e) => {
-                    this.timeRange = e.target.value;
                     this.updateChart();
                 });
             }
@@ -372,11 +353,11 @@
                 if (sortedNewTimes.length === 0) return;
 
                 const nomineeIds = Object.keys(this.nomineeData);
-                
+
                 let currentValues = {};
                 const historyTimes = Object.keys(this.voteHistory).sort();
                 const lastTime = historyTimes[historyTimes.length - 1];
-                
+
                 if (lastTime) {
                     currentValues = { ...this.voteHistory[lastTime] };
                 } else {
@@ -388,7 +369,7 @@
                     nomineeIds.forEach(id => {
                         const nomineeRecords = newRawHistory[id];
                         const record = nomineeRecords ? nomineeRecords.find(r => r.timestamp === ts) : null;
-                        
+
                         if (record) {
                             currentValues[id] = record.vote_count;
                         }
@@ -453,7 +434,7 @@
                     const nominee = this.nomineeData[id];
                     const currentVote = currentVotes ? (currentVotes[id] || 0) : 0;
                     const previousVote = previousVotes ? (previousVotes[id] || 0) : 0;
-                    const voteDifference  = currentVote - previousVote;
+                    const voteDifference = currentVote - previousVote;
                     return {
                         id: id,
                         name: nominee.name,
@@ -473,8 +454,8 @@
                     const isTop1 = index === 0;
                     const diffText = isTop1 ? `<span class="text-yellow-300 font-bold"><i class="fas fa-crown"></i> Dẫn đầu</span>` :
                         item.voteDifference > 0 ? `<span class="text-sm text-green-300 font-bold">+${item.voteDifference.toLocaleString()}</span>` :
-                        item.voteDifference < 0 ? `<span class="text-sm text-red-500 font-bold">-${item.voteDifference.toLocaleString()}</span>` :
-                        ``;
+                            item.voteDifference < 0 ? `<span class="text-sm text-red-500 font-bold">-${item.voteDifference.toLocaleString()}</span>` :
+                                ``;
 
                     const div = document.createElement('div');
                     div.className = `ranking-item ${isTop1 ? 'bg-[#5b3612]/80 border border-[#d3ad49]' : ''}`;
@@ -504,39 +485,11 @@
                 const times = Object.keys(this.voteHistory).sort();
                 if (times.length === 0) return;
 
-                const timeRangeMap = {
-                    '15m': 15 * 60 * 1000,
-                    '30m': 30 * 60 * 1000,
-                    '1h': 60 * 60 * 1000
-                };
-                const timeRangeMillis = timeRangeMap[this.timeRange] || 1;
-
-                const filteredTimes = [];
-                let currentEnd = new Date(times[0]).getTime();
-                let lastTimestamp = null;
-
-                for (let i = 0; i < times.length; i++) {
-                    const ts = times[i];
-                    const tsMillis = new Date(ts).getTime();
-                    if (tsMillis >= currentEnd) {
-                        if (lastTimestamp !== null) {
-                            filteredTimes.push(lastTimestamp);
-                        }
-                        while (currentEnd <= tsMillis) {
-                            currentEnd += timeRangeMillis;
-                        }
-                    }
-                    lastTimestamp = ts;
-                }
-                if (lastTimestamp !== null) {
-                    filteredTimes.push(lastTimestamp);
-                }
-
                 let nomineeIds = Object.keys(this.nomineeData);
                 const isMobile = window.innerWidth < 640;
-                
+
                 const series = nomineeIds.map(id => {
-                    const data = filteredTimes.map(t => {
+                    const data = times.map(t => {
                         const votes = this.voteHistory[t] && this.voteHistory[t][id] ? this.voteHistory[t][id] : 0;
                         return votes;
                     });
@@ -553,7 +506,7 @@
                 });
 
                 if (series.length === 0) return;
-                
+
                 const option = {
                     backgroundColor: 'transparent',
                     tooltip: {
@@ -575,18 +528,75 @@
                         type: 'scroll'
                     },
                     grid: {
-                        left: '3%',
-                        right: '3%',
-                        bottom: '10%',
-                        top: '5%',
+                        left: '1%',
+                        right: '1%',
+                        bottom: 90,
+                        top: '2%',
                         containLabel: true
                     },
+                    graphic: [
+                        {
+                            type: 'text',
+                            left: 'center',
+                            bottom: 65,
+                            style: {
+                                text: 'Kéo thanh trượt để xem thời gian cụ thể',
+                                fill: 'rgba(91, 54, 18, 0.5)',
+                                fontSize: 11,
+                                fontFamily: 'SVN-Apparat'
+                            }
+                        }
+                    ],
+                    dataZoom: [
+                        {
+                            type: 'slider',
+                            show: true,
+                            xAxisIndex: [0],
+                            bottom: 35,
+                            height: 20,
+                            left: '8%',
+                            right: '8%',
+                            handleSize: '110%',
+                            borderColor: 'rgba(91, 54, 18, 0.15)',
+                            backgroundColor: 'rgba(249, 248, 244, 1)',
+                            fillerColor: 'rgba(211, 173, 73, 0.15)',
+                            borderRadius: 14,
+                            showDataShadow: false,
+                            handleIcon: 'path://M512 512m-208 0a208 208 0 1 0 416 0 208 208 0 1 0-416 0Z M512 192C335.264 192 192 335.264 192 512c0 176.736 143.264 320 320 320s320-143.264 320-320C832 335.264 688.736 192 512 192z M512 800c-159.072 0-288-128.928-288-288 0-159.072 128.928-288 288-288s288 128.928 288 288C800 671.072 671.072 800 512 800z',
+                            handleStyle: { 
+                                color: '#fff',
+                                borderColor: '#d3ad49',
+                                borderWidth: 2,
+                                shadowBlur: 3,
+                                shadowColor: 'rgba(0, 0, 0, 0.15)',
+                                shadowOffsetX: 1,
+                                shadowOffsetY: 1
+                            },
+                            textStyle: { color: '#5b3612', fontSize: 11 },
+                            brushSelect: false,
+                            dataBackground: {
+                                lineStyle: { color: '#d3ad49', width: 1, opacity: 0.4 },
+                                areaStyle: { color: '#d3ad49', opacity: 0.1 }
+                            },
+                            selectedDataBackground: {
+                                lineStyle: { color: '#5b3612', width: 1.5 },
+                                areaStyle: { color: '#5b3612', opacity: 0.1 }
+                            }
+                        },
+                        {
+                            type: 'inside',
+                            xAxisIndex: [0],
+                            zoomOnMouseWheel: false,
+                            moveOnMouseWheel: true,
+                            moveOnMouseMove: true
+                        }
+                    ],
                     xAxis: {
                         type: 'category',
                         boundaryGap: false,
-                        data: filteredTimes.map(t => t.substring(11, 16)),
+                        data: times,
                         axisLine: { lineStyle: { color: '#5b3612' } },
-                        axisLabel: { 
+                        axisLabel: {
                             color: '#5b3612',
                             fontSize: isMobile ? 10 : 12,
                             rotate: isMobile ? 45 : 0
@@ -599,7 +609,7 @@
                         splitLine: {
                             lineStyle: { color: 'rgba(91, 54, 18, 0.1)' }
                         },
-                        axisLabel: { 
+                        axisLabel: {
                             color: '#5b3612',
                             fontSize: isMobile ? 10 : 12
                         }
@@ -607,7 +617,7 @@
                     series: series
                 };
 
-                this.voteChart.setOption(option, true);
+                this.voteChart.setOption(option);
             }
         }
 
