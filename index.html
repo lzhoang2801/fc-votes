@@ -202,6 +202,38 @@
             background: var(--gold-accent);
             color: var(--primary-brown);
         }
+
+        .mode-switcher {
+            display: flex;
+            background: #f0efe9;
+            border-radius: 6px;
+            padding: 3px;
+            border: 1px solid rgba(91, 54, 18, 0.1);
+        }
+
+        .mode-btn {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary-brown);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-family: 'SVN-Apparat', sans-serif;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .mode-btn.active {
+            background: white;
+            color: var(--dark-brown);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 
@@ -248,8 +280,14 @@
 
             <div class="lg:col-span-8">
                 <div class="fchoice-card h-full flex flex-col">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
-                        <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
+                            <div class="mode-switcher">
+                                <button class="mode-btn" data-mode="total">Tổng vote</button>
+                                <button class="mode-btn active" data-mode="delta">Tăng thêm</button>
+                            </div>
+                        </div>
                         <div class="text-xs sm:text-sm text-[#5b3612]">
                             <span id="lastUpdate">Cập nhật: --:--:--</span>
                         </div>
@@ -276,6 +314,7 @@
                 this.voteHistory = null;
                 this.lastUpdateTime = null;
                 this.voteChart = null;
+                this.chartMode = 'delta';
 
                 this.nomineeData = {
                     "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg" },
@@ -297,6 +336,19 @@
                 this.chartContainer = document.getElementById('chartContainer');
                 this.rankingTitle = document.getElementById('rankingTitle');
                 this.lastUpdateSpan = document.getElementById('lastUpdate');
+
+                this.modeBtns = document.querySelectorAll('.mode-btn');
+                this.modeBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const mode = e.target.dataset.mode;
+                        if (this.chartMode !== mode) {
+                            this.chartMode = mode;
+                            this.modeBtns.forEach(b => b.classList.remove('active'));
+                            e.target.classList.add('active');
+                            this.updateChart();
+                        }
+                    });
+                });
 
                 this.voteChart = echarts.init(this.chartContainer);
 
@@ -489,10 +541,20 @@
                 const isMobile = window.innerWidth < 640;
 
                 const series = nomineeIds.map(id => {
-                    const data = times.map(t => {
-                        const votes = this.voteHistory[t] && this.voteHistory[t][id] ? this.voteHistory[t][id] : 0;
-                        return votes;
-                    });
+                    let data;
+                    if (this.chartMode === 'total') {
+                        data = times.map(t => {
+                            return this.voteHistory[t] && this.voteHistory[t][id] ? this.voteHistory[t][id] : 0;
+                        });
+                    } else {
+                        data = times.map((t, index) => {
+                            const current = this.voteHistory[t] && this.voteHistory[t][id] ? this.voteHistory[t][id] : 0;
+                            if (index === 0) return 0;
+                            const prevTime = times[index - 1];
+                            const prev = this.voteHistory[prevTime] && this.voteHistory[prevTime][id] ? this.voteHistory[prevTime][id] : 0;
+                            return Math.max(0, current - prev);
+                        });
+                    }
 
                     return {
                         name: this.nomineeData[id].name,
@@ -500,7 +562,8 @@
                         smooth: true,
                         showSymbol: false,
                         data: data,
-                        lineStyle: { width: 3 },
+                        lineStyle: { width: this.chartMode === 'total' ? 3 : 2 },
+                        areaStyle: this.chartMode === 'delta' ? { opacity: 0.2 } : undefined,
                         emphasis: { focus: 'series' }
                     };
                 });
@@ -617,7 +680,7 @@
                     series: series
                 };
 
-                this.voteChart.setOption(option);
+                this.voteChart.setOption(option, true);
             }
         }
 
