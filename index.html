@@ -540,6 +540,25 @@
                 let nomineeIds = Object.keys(this.nomineeData);
                 const isMobile = window.innerWidth < 640;
 
+                let startValue = 0;
+                const endValue = times.length - 1;
+                if (times.length > 0) {
+                    try {
+                        const lastTimeStr = times[times.length - 1];
+                        const lastDate = new Date(lastTimeStr);
+                        if (!isNaN(lastDate.getTime())) {
+                            const cutoff = lastDate.getTime() - 24 * 60 * 60 * 1000;
+                            startValue = times.findIndex(t => {
+                                const d = new Date(t);
+                                return !isNaN(d.getTime()) && d.getTime() >= cutoff;
+                            });
+                            if (startValue === -1) startValue = 0;
+                        }
+                    } catch (e) {
+                        // Ignore error
+                    }
+                }
+
                 const series = nomineeIds.map(id => {
                     let data;
                     if (this.chartMode === 'total') {
@@ -615,6 +634,8 @@
                             type: 'slider',
                             show: true,
                             xAxisIndex: [0],
+                            startValue: startValue,
+                            endValue: endValue,
                             bottom: 35,
                             height: 20,
                             left: '8%',
