@@ -296,8 +296,8 @@
                             <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
                             <div class="flex items-center gap-2 flex-wrap">
                                 <div class="mode-switcher">
-                                    <button class="mode-btn" data-mode="total">Tổng vote</button>
-                                    <button class="mode-btn active" data-mode="delta">Tăng thêm</button>
+                                    <button class="mode-btn active" data-mode="total">Tổng vote</button>
+                                    <button class="mode-btn" data-mode="delta">Tăng thêm</button>
                                 </div>
                             </div>
                         </div>
@@ -334,12 +334,12 @@
                 this.chartMode = 'total';
 
                 this.nomineeData = {
-                    "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg" },
-                    "w27-80": { name: "Chuỗi concert G-DRAGON - VPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logovpb-17640426113382097448848.png" },
-                    "w27-83": { name: "Anh Trai Vượt Ngàn Chông Gai - Techcombank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/29/photo2025-11-2817-17-50-2-17643880977201950529428.jpg" },
-                    "w27-78": { name: "Live Concert 2025 - See The Light - SeABank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-62-17640822516411947393111.jpg" },
-                    "w27-79": { name: "Anh Trai Say Hi - VIB", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/28/photo2025-11-2810-12-52-17642997610201243588107.jpg" },
-                    "w27-81": { name: "Sao Nhập Ngũ - MBBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-40-1764057371955171660827.jpg" }
+                    "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg", color: "#9b59b6" },
+                    "w27-80": { name: "Chuỗi concert G-DRAGON - VPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logovpb-17640426113382097448848.png", color: "#2ecc71" },
+                    "w27-83": { name: "Anh Trai Vượt Ngàn Chông Gai - Techcombank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/29/photo2025-11-2817-17-50-2-17643880977201950529428.jpg", color: "#e74c3c" },
+                    "w27-78": { name: "Live Concert 2025 - See The Light - SeABank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-62-17640822516411947393111.jpg", color: "#4b4947" },
+                    "w27-79": { name: "Anh Trai Say Hi - VIB", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/28/photo2025-11-2810-12-52-17642997610201243588107.jpg", color: "#3498db" },
+                    "w27-81": { name: "Sao Nhập Ngũ - MBBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-40-1764057371955171660827.jpg", color: "#0f1cd0" }
                 };
 
                 Object.keys(this.nomineeData).forEach(id => {
@@ -560,6 +560,7 @@
                         sampling: 'lttb',
                         showSymbol: false,
                         data: data,
+                        itemStyle: { color: this.nomineeData[id].color },
                         lineStyle: { width: this.chartMode === 'total' ? 3 : 2 },
                         areaStyle: this.chartMode === 'delta' ? { opacity: 0.2 } : undefined,
                         emphasis: { focus: 'series' }
