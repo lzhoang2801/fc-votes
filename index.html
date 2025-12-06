@@ -288,10 +288,6 @@
                                     <button class="mode-btn" data-mode="total">Tổng vote</button>
                                     <button class="mode-btn active" data-mode="delta">Tăng thêm</button>
                                 </div>
-                                <div class="mode-switcher">
-                                    <button class="mode-btn" data-bin="10">Mỗi 10s</button>
-                                    <button class="mode-btn active" data-bin="600">Mỗi 10p</button>
-                                </div>
                             </div>
                         </div>
                         <div class="text-xs sm:text-sm text-[#5b3612]">
@@ -317,11 +313,13 @@
         class VoteVisualizer {
             constructor() {
                 this.apiUrl = 'https://vasp-pain.org/get_votes';
-                this.voteHistory = null;
+                this.rawData = {
+                    timestamps: [],
+                    series: {}
+                };
                 this.lastUpdateTime = null;
                 this.voteChart = null;
                 this.chartMode = 'delta';
-                this.binSize = '600';
 
                 this.nomineeData = {
                     "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg" },
@@ -331,6 +329,10 @@
                     "w27-79": { name: "Anh Trai Say Hi - VIB", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/28/photo2025-11-2810-12-52-17642997610201243588107.jpg" },
                     "w27-81": { name: "Sao Nhập Ngũ - MBBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-40-1764057371955171660827.jpg" }
                 };
+
+                Object.keys(this.nomineeData).forEach(id => {
+                    this.rawData.series[id] = [];
+                });
 
                 this.initializeElements();
                 this.fetchVoteHistory();
@@ -357,19 +359,6 @@
                     });
                 });
 
-                this.binBtns = document.querySelectorAll('[data-bin]');
-                this.binBtns.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const bin = e.target.dataset.bin;
-                        if (this.binSize !== bin) {
-                            this.binSize = bin;
-                            this.binBtns.forEach(b => b.classList.remove('active'));
-                            e.target.classList.add('active');
-                            this.updateChart();
-                        }
-                    });
-                });
-
                 this.voteChart = echarts.init(this.chartContainer);
 
                 window.addEventListener('resize', () => {
@@ -381,136 +370,94 @@
             async fetchVoteHistory() {
                 try {
                     let url = this.apiUrl;
-                    if (this.voteHistory && this.lastUpdateTime) {
+                    if (this.rawData.timestamps.length > 0 && this.lastUpdateTime) {
                         url += `?last_updated=${encodeURIComponent(this.lastUpdateTime)}`;
                     } else {
-                        if (!this.voteHistory) {
+                        if (this.rawData.timestamps.length === 0) {
                             this.rankingList.innerHTML = '<div class="text-center text-white/60 py-10"><i class="fas fa-spinner fa-spin text-2xl"></i><br>Đang cập nhật...</div>';
                         }
                     }
 
                     const response = await fetch(url);
-                    const rawData = await response.json();
+                    const rawJson = await response.json();
 
-                    if (this.voteHistory && this.lastUpdateTime) {
-                        this.mergeVoteData(rawData.vote_history);
-                    } else {
-                        this.voteHistory = this.transformVoteData(rawData.vote_history);
-                    }
+                    this.processNewData(rawJson.vote_history);
 
-                    if (rawData.last_update_time) {
-                        this.lastUpdateTime = rawData.last_update_time;
+                    if (rawJson.last_update_time) {
+                        this.lastUpdateTime = rawJson.last_update_time;
                         this.lastUpdateSpan.textContent = `Cập nhật: ${this.lastUpdateTime}`;
                     }
 
                     this.updateRankingList();
-                    this.updateChart();
+                    requestAnimationFrame(() => this.updateChart());
                 } catch (error) {
                     console.error('Error fetching history:', error);
-                    if (!this.voteHistory) {
+                    if (this.rawData.timestamps.length === 0) {
                         this.rankingList.innerHTML = '<div class="text-center text-white p-4">Lỗi tải dữ liệu. Vui lòng thử lại sau.</div>';
                     }
                 }
             }
 
-            mergeVoteData(newRawHistory) {
+            processNewData(newRawHistory) {
                 if (!newRawHistory || Object.keys(newRawHistory).length === 0) return;
 
-                const newTimestamps = new Set();
+                const newTimestampsSet = new Set();
                 Object.values(newRawHistory).forEach(records => {
-                    records.forEach(r => newTimestamps.add(r.timestamp));
+                    records.forEach(r => newTimestampsSet.add(r.timestamp));
                 });
-
-                const sortedNewTimes = Array.from(newTimestamps).sort();
+                const sortedNewTimes = Array.from(newTimestampsSet).sort();
+                
                 if (sortedNewTimes.length === 0) return;
 
                 const nomineeIds = Object.keys(this.nomineeData);
+                const tempMap = {};
+                sortedNewTimes.forEach(ts => tempMap[ts] = {});
 
-                let currentValues = {};
-                const historyTimes = Object.keys(this.voteHistory).sort();
-                const lastTime = historyTimes[historyTimes.length - 1];
+                nomineeIds.forEach(id => {
+                    const records = newRawHistory[id] || [];
+                    records.forEach(r => {
+                        if (tempMap[r.timestamp]) {
+                            tempMap[r.timestamp][id] = r.vote_count;
+                        }
+                    });
+                });
 
-                if (lastTime) {
-                    currentValues = { ...this.voteHistory[lastTime] };
-                } else {
-                    nomineeIds.forEach(id => currentValues[id] = 0);
-                }
+                let lastKnownValues = {};
+                nomineeIds.forEach(id => {
+                    const currentSeries = this.rawData.series[id];
+                    lastKnownValues[id] = currentSeries.length > 0 ? currentSeries[currentSeries.length - 1] : 0;
+                });
+
+                const lastExistingTime = this.rawData.timestamps.length > 0 ? this.rawData.timestamps[this.rawData.timestamps.length - 1] : '';
 
                 sortedNewTimes.forEach(ts => {
-                    this.voteHistory[ts] = {};
-                    nomineeIds.forEach(id => {
-                        const nomineeRecords = newRawHistory[id];
-                        const record = nomineeRecords ? nomineeRecords.find(r => r.timestamp === ts) : null;
-
-                        if (record) {
-                            currentValues[id] = record.vote_count;
-                        }
-                        this.voteHistory[ts][id] = currentValues[id] || 0;
-                    });
+                    if (ts > lastExistingTime) {
+                        this.rawData.timestamps.push(ts);
+                        nomineeIds.forEach(id => {
+                            const val = tempMap[ts][id];
+                            if (val !== undefined) {
+                                lastKnownValues[id] = val;
+                            }
+                            this.rawData.series[id].push(lastKnownValues[id]);
+                        });
+                    }
                 });
-            }
-
-            transformVoteData(rawHistory) {
-                const formattedHistory = {};
-                const allTimestamps = new Set();
-
-                Object.values(rawHistory).forEach(records => {
-                    records.forEach(r => allTimestamps.add(r.timestamp));
-                });
-
-                allTimestamps.forEach(ts => {
-                    formattedHistory[ts] = {};
-                });
-
-                Object.entries(rawHistory).forEach(([nomineeId, records]) => {
-                    records.forEach(record => {
-                        if (formattedHistory[record.timestamp]) {
-                            formattedHistory[record.timestamp][nomineeId] = record.vote_count;
-                        }
-                    });
-                });
-
-                const sortedTimes = Array.from(allTimestamps).sort();
-                const nomineeIds = Object.keys(rawHistory);
-                const lastKnownVotes = {};
-                nomineeIds.forEach(id => lastKnownVotes[id] = 0);
-
-                sortedTimes.forEach(ts => {
-                    nomineeIds.forEach(id => {
-                        if (formattedHistory[ts][id] !== undefined) {
-                            lastKnownVotes[id] = formattedHistory[ts][id];
-                        } else {
-                            formattedHistory[ts][id] = lastKnownVotes[id];
-                        }
-                    });
-                });
-
-                return formattedHistory;
             }
 
             updateRankingList() {
-                if (!this.voteHistory) return;
-
-                const times = Object.keys(this.voteHistory).sort();
-                if (times.length === 0) return;
-
-                const latestTime = times[times.length - 1];
-                const currentVotes = this.voteHistory[latestTime];
-
-                const previousTime = times[times.length - 2] || latestTime;
-                const previousVotes = this.voteHistory[previousTime];
+                const len = this.rawData.timestamps.length;
+                if (len === 0) return;
 
                 const nomineeIds = Object.keys(this.nomineeData);
-
                 let rankingData = nomineeIds.map(id => {
-                    const nominee = this.nomineeData[id];
-                    const currentVote = currentVotes ? (currentVotes[id] || 0) : 0;
-                    const previousVote = previousVotes ? (previousVotes[id] || 0) : 0;
+                    const series = this.rawData.series[id];
+                    const currentVote = series[len - 1] || 0;
+                    const previousVote = len > 1 ? series[len - 2] : currentVote;
                     const voteDifference = currentVote - previousVote;
                     return {
                         id: id,
-                        name: nominee.name,
-                        image: nominee.image,
+                        name: this.nomineeData[id].name,
+                        image: this.nomineeData[id].image,
                         votes: currentVote,
                         voteDifference
                     };
@@ -552,79 +499,53 @@
             }
 
             updateChart() {
-                if (!this.voteHistory) return;
+                if (this.rawData.timestamps.length === 0) return;
 
-                let times = Object.keys(this.voteHistory).sort();
-                if (times.length === 0) return;
+                const TARGET_POINTS = 2000;
+                
+                let displayTimes = this.rawData.timestamps;
+                let displaySeries = this.rawData.series;
 
-                if (this.binSize !== '10') {
-                    const binSeconds = parseInt(this.binSize);
-                    if (!isNaN(binSeconds)) {
-                        const binDuration = binSeconds * 1000;
-                        const filteredTimes = [];
-                        let lastTime = 0;
-                        
-                        times.forEach(t => {
-                            const timeVal = new Date(t).getTime();
-                            if (!isNaN(timeVal)) {
-                                if (timeVal - lastTime >= binDuration) {
-                                    filteredTimes.push(t);
-                                    lastTime = timeVal;
-                                }
-                            }
-                        });
-                        
-                        if (filteredTimes.length > 0) {
-                            const lastOriginalTime = times[times.length - 1];
-                            const lastFilteredTime = filteredTimes[filteredTimes.length - 1];
-
-                            times = filteredTimes;
+                if (displayTimes.length > TARGET_POINTS) {
+                    const compressionRatio = Math.ceil(displayTimes.length / TARGET_POINTS);
+                     
+                    const sampled = { times: [], series: {} };
+                    Object.keys(displaySeries).forEach(k => sampled.series[k] = []);
+                     
+                    for (let i = 0; i < displayTimes.length; i++) {
+                        if (i % compressionRatio === 0 || i === displayTimes.length - 1) {
+                            sampled.times.push(displayTimes[i]);
+                            Object.keys(displaySeries).forEach(k => {
+                                sampled.series[k].push(displaySeries[k][i]);
+                            });
                         }
                     }
+                    displayTimes = sampled.times;
+                    displaySeries = sampled.series;
                 }
 
                 let nomineeIds = Object.keys(this.nomineeData);
                 const isMobile = window.innerWidth < 640;
 
-                let startValue = 0;
-                const endValue = times.length - 1;
-                if (times.length > 0) {
-                    try {
-                        const lastTimeStr = times[times.length - 1];
-                        const lastDate = new Date(lastTimeStr);
-                        if (!isNaN(lastDate.getTime())) {
-                            const cutoff = lastDate.getTime() - 24 * 60 * 60 * 1000;
-                            startValue = times.findIndex(t => {
-                                const d = new Date(t);
-                                return !isNaN(d.getTime()) && d.getTime() >= cutoff;
-                            });
-                            if (startValue === -1) startValue = 0;
-                        }
-                    } catch (e) {
-                        // Ignore error
-                    }
-                }
-
                 const series = nomineeIds.map(id => {
-                    let data;
-                    if (this.chartMode === 'total') {
-                        data = times.map(t => {
-                            return this.voteHistory[t] && this.voteHistory[t][id] ? this.voteHistory[t][id] : 0;
-                        });
-                    } else {
-                        data = times.map((t, index) => {
-                            const current = this.voteHistory[t] && this.voteHistory[t][id] ? this.voteHistory[t][id] : 0;
-                            if (index === 0) return 0;
-                            const prevTime = times[index - 1];
-                            const prev = this.voteHistory[prevTime] && this.voteHistory[prevTime][id] ? this.voteHistory[prevTime][id] : 0;
-                            return Math.max(0, current - prev);
-                        });
+                    let data = displaySeries[id];
+
+                    if (this.chartMode === 'delta') {
+                        const deltaData = new Array(data.length);
+                        deltaData[0] = 0;
+                        for (let i = 1; i < data.length; i++) {
+                            deltaData[i] = Math.max(0, data[i] - data[i-1]);
+                        }
+                        data = deltaData;
                     }
+
+                    const isLargeData = data.length > 1000;
 
                     return {
                         name: this.nomineeData[id].name,
                         type: 'line',
-                        smooth: true,
+                        smooth: isLargeData ? false : true, 
+                        sampling: 'lttb', 
                         showSymbol: false,
                         data: data,
                         lineStyle: { width: this.chartMode === 'total' ? 3 : 2 },
@@ -636,6 +557,7 @@
                 if (series.length === 0) return;
 
                 const option = {
+                    animation: displayTimes.length <= 1000,
                     backgroundColor: 'transparent',
                     tooltip: {
                         trigger: 'axis',
@@ -680,12 +602,12 @@
                             type: 'slider',
                             show: true,
                             xAxisIndex: [0],
-                            startValue: startValue,
-                            endValue: endValue,
                             bottom: 35,
                             height: 20,
                             left: '8%',
                             right: '8%',
+                            start: 80,
+                            end: 100,
                             handleSize: '110%',
                             borderColor: 'rgba(91, 54, 18, 0.15)',
                             backgroundColor: 'rgba(249, 248, 244, 1)',
@@ -724,7 +646,7 @@
                     xAxis: {
                         type: 'category',
                         boundaryGap: false,
-                        data: times,
+                        data: displayTimes,
                         axisLine: { lineStyle: { color: '#5b3612' } },
                         axisLabel: {
                             color: '#5b3612',
@@ -747,7 +669,7 @@
                     series: series
                 };
 
-                this.voteChart.setOption(option, true);
+                this.voteChart.setOption(option);
             }
         }
 
