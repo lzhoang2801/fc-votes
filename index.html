@@ -232,7 +232,7 @@
         .mode-btn.active {
             background: white;
             color: var(--dark-brown);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -251,9 +251,11 @@
     <main class="container mx-auto px-4 pb-12 pt-32">
 
         <div class="text-center mb-6 sm:mb-10">
-            <h1 class="hero-title text-[#392109] mb-4 px-2">Theo dõi trực quan diễn biến bình chọn FChoice Awards 2025.</h1>
+            <h1 class="hero-title text-[#392109] mb-4 px-2">Theo dõi trực quan diễn biến bình chọn FChoice Awards 2025.
+            </h1>
             <div class="flex justify-center">
-                <span class="inline-flex items-center rounded-full bg-[#d3ad49] px-6 py-2 text-xl font-bold text-[#5b3612] shadow-sm uppercase tracking-wider">
+                <span
+                    class="inline-flex items-center rounded-full bg-[#d3ad49] px-6 py-2 text-xl font-bold text-[#5b3612] shadow-sm uppercase tracking-wider">
                     <i class="fas fa-fire mr-2 animate-pulse"></i> Gai con giữ top 1 nào!
                 </span>
             </div>
@@ -263,7 +265,8 @@
             class="fchoice-card mb-6 sm:mb-8 flex flex-wrap gap-3 sm:gap-4 items-center justify-between bg-[#f9f8f4]/95 backdrop-blur-sm border border-[#5b3612]/10">
             <div class="flex flex-wrap gap-3 sm:gap-4 items-center w-full justify-between">
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <span class="text-[#392109] text-base sm:text-lg font-bold uppercase tracking-wide">Hạng mục: Ngân hàng Kim chủ của năm</span>
+                    <span class="text-[#392109] text-base sm:text-lg font-bold uppercase tracking-wide">Hạng mục: Ngân
+                        hàng Kim chủ của năm</span>
                 </div>
             </div>
         </div>
@@ -273,7 +276,9 @@
             <div class="lg:col-span-4">
                 <div class="ranking-card p-4 sm:p-6 h-full flex flex-col">
                     <div class="text-center mb-4 sm:mb-6 relative z-10">
-                        <h2 id="rankingTitle" class="text-xl sm:text-2xl font-medium uppercase tracking-wider text-white mt-4 sm:mt-10">Bảng Xếp Hạng</h2>
+                        <h2 id="rankingTitle"
+                            class="text-xl sm:text-2xl font-medium uppercase tracking-wider text-white mt-4 sm:mt-10">
+                            Bảng Xếp Hạng</h2>
                         <p class="text-white/80 text-xs sm:text-sm mt-2">Cập nhật theo thời gian thực</p>
                     </div>
 
@@ -285,7 +290,8 @@
 
             <div class="lg:col-span-8">
                 <div class="fchoice-card h-full flex flex-col">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
+                    <div
+                        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
                         <div class="flex flex-wrap items-center gap-3">
                             <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
                             <div class="flex items-center gap-2 flex-wrap">
@@ -325,7 +331,7 @@
                 };
                 this.lastUpdateTime = null;
                 this.voteChart = null;
-                this.chartMode = 'delta';
+                this.chartMode = 'total';
 
                 this.nomineeData = {
                     "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg" },
@@ -412,7 +418,7 @@
                     records.forEach(r => newTimestampsSet.add(r.timestamp));
                 });
                 const sortedNewTimes = Array.from(newTimestampsSet).sort();
-                
+
                 if (sortedNewTimes.length === 0) return;
 
                 const nomineeIds = Object.keys(this.nomineeData);
@@ -508,16 +514,16 @@
                 if (this.rawData.timestamps.length === 0) return;
 
                 const TARGET_POINTS = 2000;
-                
+
                 let displayTimes = this.rawData.timestamps;
                 let displaySeries = this.rawData.series;
 
                 if (displayTimes.length > TARGET_POINTS) {
                     const compressionRatio = Math.ceil(displayTimes.length / TARGET_POINTS);
-                     
+
                     const sampled = { times: [], series: {} };
                     Object.keys(displaySeries).forEach(k => sampled.series[k] = []);
-                     
+
                     for (let i = 0; i < displayTimes.length; i++) {
                         if (i % compressionRatio === 0 || i === displayTimes.length - 1) {
                             sampled.times.push(displayTimes[i]);
@@ -540,7 +546,7 @@
                         const deltaData = new Array(data.length);
                         deltaData[0] = 0;
                         for (let i = 1; i < data.length; i++) {
-                            deltaData[i] = Math.max(0, data[i] - data[i-1]);
+                            deltaData[i] = Math.max(0, data[i] - data[i - 1]);
                         }
                         data = deltaData;
                     }
@@ -550,8 +556,8 @@
                     return {
                         name: this.nomineeData[id].name,
                         type: 'line',
-                        smooth: isLargeData ? false : true, 
-                        sampling: 'lttb', 
+                        smooth: isLargeData ? false : true,
+                        sampling: 'lttb',
                         showSymbol: false,
                         data: data,
                         lineStyle: { width: this.chartMode === 'total' ? 3 : 2 },
@@ -597,8 +603,8 @@
                             bottom: 65,
                             style: {
                                 text: '#GaiCon kéo thanh dưới để xem thời gian cụ thể nhé',
-                                fill: 'rgba(91, 54, 18, 0.5)',
-                                fontSize: 11,
+                                fill: 'rgba(91, 54, 18, 1)',
+                                fontSize: 12 ,
                                 fontFamily: 'SVN-Apparat'
                             }
                         }
@@ -621,7 +627,7 @@
                             borderRadius: 14,
                             showDataShadow: false,
                             handleIcon: 'path://M512 512m-208 0a208 208 0 1 0 416 0 208 208 0 1 0-416 0Z M512 192C335.264 192 192 335.264 192 512c0 176.736 143.264 320 320 320s320-143.264 320-320C832 335.264 688.736 192 512 192z M512 800c-159.072 0-288-128.928-288-288 0-159.072 128.928-288 288-288s288 128.928 288 288C800 671.072 671.072 800 512 800z',
-                            handleStyle: { 
+                            handleStyle: {
                                 color: '#fff',
                                 borderColor: '#d3ad49',
                                 borderWidth: 2,
@@ -706,7 +712,8 @@
                     </h3>
 
                     <p class="text-[#392109] text-sm sm:text-base leading-relaxed">
-                        Để giữ vững vị trí dẫn đầu, Gai con hãy tiếp tục <span class="font-bold text-[#d3ad49]">FChoice</span> vote ở hai hạng mục
+                        Để giữ vững vị trí dẫn đầu, Gai con hãy tiếp tục <span
+                            class="font-bold text-[#d3ad49]">FChoice</span> vote ở hai hạng mục
                         <br>
                         <span class="font-bold">"Ngân hàng Kim chủ của năm"</span><br>
                         và <span class="font-bold">"Cổ phiếu ngân hàng được nhà đầu tư yêu thích của năm"</span>
