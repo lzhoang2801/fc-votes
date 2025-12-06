@@ -283,9 +283,15 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
                         <div class="flex flex-wrap items-center gap-3">
                             <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
-                            <div class="mode-switcher">
-                                <button class="mode-btn" data-mode="total">Tổng vote</button>
-                                <button class="mode-btn active" data-mode="delta">Tăng thêm</button>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <div class="mode-switcher">
+                                    <button class="mode-btn" data-mode="total">Tổng vote</button>
+                                    <button class="mode-btn active" data-mode="delta">Tăng thêm</button>
+                                </div>
+                                <div class="mode-switcher">
+                                    <button class="mode-btn" data-bin="10">Mỗi 10s</button>
+                                    <button class="mode-btn active" data-bin="600">Mỗi 10p</button>
+                                </div>
                             </div>
                         </div>
                         <div class="text-xs sm:text-sm text-[#5b3612]">
@@ -315,6 +321,7 @@
                 this.lastUpdateTime = null;
                 this.voteChart = null;
                 this.chartMode = 'delta';
+                this.binSize = '600';
 
                 this.nomineeData = {
                     "w27-82": { name: "Em Xinh Say Hi - TPBank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/25/logo-vuong2-49-17640573719781603453757.jpg" },
@@ -337,13 +344,26 @@
                 this.rankingTitle = document.getElementById('rankingTitle');
                 this.lastUpdateSpan = document.getElementById('lastUpdate');
 
-                this.modeBtns = document.querySelectorAll('.mode-btn');
+                this.modeBtns = document.querySelectorAll('[data-mode]');
                 this.modeBtns.forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const mode = e.target.dataset.mode;
                         if (this.chartMode !== mode) {
                             this.chartMode = mode;
                             this.modeBtns.forEach(b => b.classList.remove('active'));
+                            e.target.classList.add('active');
+                            this.updateChart();
+                        }
+                    });
+                });
+
+                this.binBtns = document.querySelectorAll('[data-bin]');
+                this.binBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const bin = e.target.dataset.bin;
+                        if (this.binSize !== bin) {
+                            this.binSize = bin;
+                            this.binBtns.forEach(b => b.classList.remove('active'));
                             e.target.classList.add('active');
                             this.updateChart();
                         }
@@ -534,8 +554,34 @@
             updateChart() {
                 if (!this.voteHistory) return;
 
-                const times = Object.keys(this.voteHistory).sort();
+                let times = Object.keys(this.voteHistory).sort();
                 if (times.length === 0) return;
+
+                if (this.binSize !== '10') {
+                    const binSeconds = parseInt(this.binSize);
+                    if (!isNaN(binSeconds)) {
+                        const binDuration = binSeconds * 1000;
+                        const filteredTimes = [];
+                        let lastTime = 0;
+                        
+                        times.forEach(t => {
+                            const timeVal = new Date(t).getTime();
+                            if (!isNaN(timeVal)) {
+                                if (timeVal - lastTime >= binDuration) {
+                                    filteredTimes.push(t);
+                                    lastTime = timeVal;
+                                }
+                            }
+                        });
+                        
+                        if (filteredTimes.length > 0) {
+                            const lastOriginalTime = times[times.length - 1];
+                            const lastFilteredTime = filteredTimes[filteredTimes.length - 1];
+
+                            times = filteredTimes;
+                        }
+                    }
+                }
 
                 let nomineeIds = Object.keys(this.nomineeData);
                 const isMobile = window.innerWidth < 640;
