@@ -211,6 +211,9 @@
             <img src="https://static.mediacdn.vn/fchoice/images/logo.svg" alt="FChoice Logo" style="width: 127px;">
         </a>
         <div class="ml-auto flex items-center gap-4">
+            <button id="notifyBtn" class="text-white/80 hover:text-white transition-colors" title="Bật thông báo">
+                <i class="fas fa-bell-slash"></i>
+            </button>
             <span class="text-white text-xs font-medium uppercase hidden sm:block">FChoice 2025 Vote Visualizer</span>
         </div>
     </header>
@@ -313,6 +316,7 @@
 
                 this.events = [];
                 this.lastProcessedEventIndex = 0;
+                this.notificationsEnabled = false;
 
                 this.nomineeData = {
                     "w27-83": { name: "Anh Trai Vượt Ngàn Chông Gai - Techcombank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/29/photo2025-11-2817-17-50-2-17643880977201950529428.jpg", color: "#e74c3c" },
@@ -339,6 +343,31 @@
                 this.rankingTitle = document.getElementById('rankingTitle');
                 this.lastUpdateSpan = document.getElementById('lastUpdate');
                 this.eventLogContainer = document.getElementById('eventLogContainer');
+                this.notifyBtn = document.getElementById('notifyBtn');
+                this.popupNotifyBtn = document.getElementById('popupNotifyBtn');
+
+                if (this.notifyBtn) {
+                    this.notifyBtn.addEventListener('click', () => this.toggleNotification());
+                }
+                
+                if (this.popupNotifyBtn) {
+                    this.popupNotifyBtn.addEventListener('click', () => {
+                        this.toggleNotification();
+                    });
+                }
+
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                     navigator.serviceWorker.getRegistration().then(reg => {
+                         if (reg) {
+                             reg.pushManager.getSubscription().then(sub => {
+                                 if (sub) {
+                                     this.notificationsEnabled = true;
+                                     this.updateNotifyButton();
+                                 }
+                             });
+                         }
+                     });
+                }
 
                 this.modeBtns = document.querySelectorAll('[data-mode]');
                 this.modeBtns.forEach(btn => {
@@ -360,6 +389,131 @@
                     this.updateChart();
                     this.renderEventVisualizer();
                 });
+            }
+
+            async toggleNotification() {
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    alert('Trình duyệt không hỗ trợ Push Notification.');
+                    return;
+                }
+
+                if (this.notificationsEnabled) {
+                    if (confirm('Bạn có chắc chắn muốn huỷ nhận thông báo?')) {
+                        try {
+                            await this.unsubscribeFromPush();
+                        } catch (e) {
+                            console.error('Unsubscribe error:', e);
+                            alert('Lỗi huỷ đăng ký: ' + e.message);
+                        }
+                    }
+                    return;
+                }
+
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    try {
+                        await this.subscribeToPush();
+                    } catch (e) {
+                        console.error('Subscription error:', e);
+                        alert('Lỗi đăng ký: ' + e.message);
+                    }
+                } else {
+                     alert('Bạn đã chặn thông báo.');
+                }
+            }
+
+            async unsubscribeFromPush() {
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg) {
+                    const subscription = await reg.pushManager.getSubscription();
+                    if (subscription) {
+                        const baseUrl = this.apiUrl.replace('/get_votes', '');
+                        await fetch(`${baseUrl}/unsubscribe`, {
+                            method: 'POST',
+                            body: JSON.stringify({ endpoint: subscription.endpoint }),
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        await subscription.unsubscribe();
+                        
+                        this.notificationsEnabled = false;
+                        this.updateNotifyButton();
+                        alert('Đã huỷ nhận thông báo thành công.');
+                    }
+                }
+            }
+
+            async subscribeToPush() {
+                const baseUrl = this.apiUrl.replace('/get_votes', '');
+                
+                const keyRes = await fetch(`${baseUrl}/vapid_public_key`);
+                if (!keyRes.ok) throw new Error('Cannot fetch VAPID key');
+                
+                const keyData = await keyRes.json();
+                const publicVapidKey = keyData.publicKey;
+
+                const register = await navigator.serviceWorker.register('/sw.js');
+                await navigator.serviceWorker.ready;
+
+                const subscription = await register.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: this.urlBase64ToUint8Array(publicVapidKey)
+                });
+
+                await fetch(`${baseUrl}/subscribe`, {
+                    method: 'POST',
+                    body: JSON.stringify(subscription),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                this.notificationsEnabled = true;
+                this.updateNotifyButton();
+                new Notification('Web tracking FChoice 2025 - lzhoang2801', {
+                    body: 'Đã đăng ký nhận thông báo đẩy thành công!',
+                    icon: 'https://static.mediacdn.vn/fchoice/images/logo-2.svg'
+                });
+            }
+
+            urlBase64ToUint8Array(base64String) {
+                const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                const base64 = (base64String + padding)
+                    .replace(/\-/g, '+')
+                    .replace(/_/g, '/');
+
+                const rawData = window.atob(base64);
+                const outputArray = new Uint8Array(rawData.length);
+
+                for (let i = 0; i < rawData.length; ++i) {
+                    outputArray[i] = rawData.charCodeAt(i);
+                }
+                return outputArray;
+            }
+
+            updateNotifyButton() {
+                if (this.notifyBtn) {
+                    const icon = this.notifyBtn.querySelector('i');
+                    if (this.notificationsEnabled) {
+                        icon.className = 'fas fa-bell text-[#d3ad49]';
+                        this.notifyBtn.classList.remove('text-white/80');
+                        this.notifyBtn.classList.add('text-white');
+                        this.notifyBtn.title = "Đã bật thông báo";
+                    } else {
+                        icon.className = 'fas fa-bell-slash';
+                        this.notifyBtn.classList.add('text-white/80');
+                        this.notifyBtn.classList.remove('text-white');
+                        this.notifyBtn.title = "Bật thông báo";
+                    }
+                }
+
+                if (this.popupNotifyBtn) {
+                    if (this.notificationsEnabled) {
+                        this.popupNotifyBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Đã bật thông báo';
+                        this.popupNotifyBtn.classList.add('opacity-75', 'cursor-default');
+                    } else {
+                        this.popupNotifyBtn.innerHTML = '<i class="fas fa-bell mr-2"></i> Bật thông báo';
+                        this.popupNotifyBtn.classList.remove('opacity-75', 'cursor-default');
+                    }
+                }
             }
 
             async fetchVoteHistory() {
@@ -806,34 +960,28 @@
                 <i class="fas fa-times"></i>
             </button>
 
-            <div class="p-0">
-                <div class="bg-[#d32f2f] flex justify-center items-center">
-                    <img id="popupImage" src="images/image_01.jpg" alt="ATVNCG 2024">
+            <div class="p-8 text-center space-y-4">
+                <div class="text-[#d3ad49] text-4xl mb-2">
+                    <i class="fas fa-exclamation-triangle"></i>
                 </div>
 
-                <div class="p-6 text-center space-y-4">
-                    <h3
-                        class="text-xl sm:text-2xl font-bold text-[#5b3612] uppercase font-['SVN-Kallisto'] leading-tight">
-                        Top 1 đã đến tay cho kim chủ Tech cùng ATVNCG
-                    </h3>
+                <h3
+                    class="text-xl sm:text-2xl font-bold text-[#5b3612] uppercase font-['SVN-Kallisto'] leading-tight">
+                    Xin lỗi #GaiCon rất nhiều vì đã lỡ tay làm mất dữ liệu đã tracking được trước đó.
+                </h3>
 
-                    <p class="text-sm sm:text-base leading-relaxed">
-                        Để giữ vững vị trí dẫn đầu, Gai con hãy tiếp tục <span
-                            class="font-bold text-[#d3ad49]">FChoice</span> vote ở hai hạng mục
-                        <br>
-                        <span class="font-bold">"Ngân hàng Kim chủ của năm"</span><br>
-                        và <span class="font-bold">"Cổ phiếu ngân hàng được nhà đầu tư yêu thích của năm"</span>
-                    </p>
+                <p class="text-sm sm:text-base leading-relaxed text-[#5b3612]">
+                    Do sơ xuất không mong muốn cho việc cập nhật tính năng đẩy thông báo đến mỗi khi có sự kiện mới và cập nhật lượng vote mỗi 10p cho mọi người
+                </p>
 
-                    <div class="pt-2">
-                        <a href="https://fchoice.vn" target="_blank"
-                            class="inline-block bg-[#d3ad49] hover:bg-[#b08d35] text-[#5b3612] font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 uppercase tracking-wider">
-                            Vote Ngay
-                        </a>
-                    </div>
-
-                    <p class="text-xs text-[#5b3612]/60 font-medium italic">#camonvidaden</p>
+                <div class="pt-4">
+                    <button id="popupNotifyBtn"
+                        class="inline-flex items-center bg-[#d3ad49] hover:bg-[#b08d35] text-[#5b3612] font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 uppercase tracking-wider">
+                        <i class="fas fa-bell mr-2"></i> Bật thông báo
+                    </button>
                 </div>
+
+                <p class="text-xs text-[#5b3612]/60 font-medium italic">Xin lỗi vì trải nghiệm không tốt. #camonvidaden</p>
             </div>
         </div>
     </div>
@@ -843,20 +991,6 @@
             const popup = document.getElementById('promoPopup');
             const popupContent = document.getElementById('popupContent');
             const closeBtn = document.getElementById('closePopup');
-            const popupImage = document.getElementById('popupImage');
-
-            const promoImages = [
-                'image_01.jpg',
-                'image_02.jpg',
-                'image_03.jpg',
-                'image_04.jpg',
-                'image_05.png'
-            ];
-
-            if (promoImages.length > 0) {
-                const randomImage = promoImages[Math.floor(Math.random() * promoImages.length)];
-                popupImage.src = `images/${randomImage}`;
-            }
 
             setTimeout(() => {
                 popup.classList.remove('opacity-0', 'pointer-events-none');
