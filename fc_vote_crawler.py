@@ -53,7 +53,7 @@ class FChoiceVoteCrawler:
     def save_vote_history(self):
         try:
             with open("vote_history.json", "w") as f:
-                json.dump(self.vote_history, f, indent=4)
+                json.dump(self.vote_history, f)
         except Exception as e:
             raise Exception(f"Error saving vote history: {e}")
 
@@ -93,6 +93,16 @@ class FChoiceVoteCrawler:
                     filtered_data["vote_history"][nominee_id] = new_votes
             
             return filtered_data
+    
+    def get_latest_votes(self):
+        with self.lock:
+            latest_votes = {}
+            for nominee_id, history in self.vote_history.get("vote_history", {}).items():
+                if history:
+                    latest_votes[nominee_id] = history[-1]["vote_count"]
+                else:
+                    latest_votes[nominee_id] = 0
+            return latest_votes
 
     def crawl_votes(self):
         try:
