@@ -6,7 +6,7 @@ self.addEventListener('push', function(event) {
         body: data.body || 'Có biến động vote mới!',
         icon: data.icon || 'https://static.mediacdn.vn/fchoice/images/logo-2.svg',
         badge: 'https://static.mediacdn.vn/fchoice/images/logo-2.svg',
-        data: { url: data.url || '/' }
+        data: { url: data.url || '/fc-votes/' }
     };
 
     event.waitUntil(
