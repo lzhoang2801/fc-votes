@@ -394,7 +394,7 @@
 
             async toggleNotification() {
                 if (!('serviceWorker' in navigator)) {
-                    alert('Trình duyệt không hỗ trợ Service Worker.');
+                    alert('Trình duyệt không hỗ trợ Service Worker. Bạn hãy truy cập trang này trên trình duyệt như Chrome, Safari,... để bật thông báo.');
                     return;
                 }
 
@@ -403,7 +403,7 @@
                                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                     
                     if (isIOS) {
-                        alert('Trên thiết bị iOS, bạn cần:\n1. Nhấn nút Share (Chia sẻ)\n2. Chọn "Thêm vào Màn hình chính" (Add to Home Screen)\n3. Mở ứng dụng từ màn hình chính để bật thông báo.');
+                        alert('Trên thiết bị iOS, bạn cần:\n1. Nhấn nút "Chia sẻ" (Share)\n2. Chọn "Thêm vào Màn hình chính" (Add to Home Screen)\n3. Mở ứng dụng từ màn hình chính để bật thông báo.');
                     } else {
                         alert('Trình duyệt không hỗ trợ Push Notification.');
                     }
