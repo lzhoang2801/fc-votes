@@ -234,6 +234,33 @@
             color: var(--dark-brown);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
+
+        .event-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(91, 54, 18, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        .event-item:hover {
+            background: rgba(211, 173, 73, 0.05);
+        }
+        .event-time {
+            font-family: 'SVN-Kallisto';
+            color: var(--primary-brown);
+            font-weight: bold;
+            font-size: 13px;
+            min-width: 65px;
+        }
+        .event-detail {
+            flex: 1;
+        }
+        .event-desc {
+            color: var(--dark-brown);
+            font-size: 13px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 
@@ -271,9 +298,9 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[400px] sm:min-h-[600px]">
-
-            <div class="lg:col-span-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mb-8">
+            
+            <div class="lg:col-span-5">
                 <div class="ranking-card p-4 sm:p-6 h-full flex flex-col">
                     <div class="text-center mb-4 sm:mb-6 relative z-10">
                         <h2 id="rankingTitle"
@@ -288,29 +315,39 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-8">
-                <div class="fchoice-card h-full flex flex-col">
-                    <div
-                        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
-                        <div class="flex flex-wrap items-center gap-3">
-                            <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <div class="mode-switcher">
-                                    <button class="mode-btn" data-mode="total">Tổng vote</button>
-                                    <button class="mode-btn" data-mode="delta">Tăng thêm</button>
-                                    <button class="mode-btn active" data-mode="gap">Khoảng cách</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-xs sm:text-sm text-[#5b3612]">
-                            <span id="lastUpdate">Cập nhật: --:--:--</span>
-                        </div>
+            <div class="lg:col-span-7">
+                <div class="fchoice-card flex flex-col h-[625px]">
+                    <div class="flex justify-between items-center mb-4 border-b border-[#5b3612]/10 pb-3">
+                        <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">
+                            <i class="fas fa-history mr-2 text-[#d3ad49]"></i>Dòng sự kiện nổi bật
+                        </h3>
                     </div>
-
-                    <div id="chartContainer" class="flex-1 w-full min-h-[500px]"></div>
+                    <div id="eventVisualizerWrapper" class="flex-1 relative w-full h-full overflow-hidden">
+                        <div id="eventLogContainer" class="w-full h-full overflow-y-auto pr-1 custom-scrollbar"></div>
+                    </div>
                 </div>
             </div>
 
+        </div>
+
+        <div class="fchoice-card h-full flex flex-col min-h-[500px] mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 border-b border-[#5b3612]/10 pb-3 sm:pb-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="mode-switcher">
+                            <button class="mode-btn" data-mode="total">Tổng vote</button>
+                            <button class="mode-btn" data-mode="delta">Tăng thêm</button>
+                            <button class="mode-btn active" data-mode="gap">Khoảng cách</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-xs sm:text-sm text-[#5b3612]">
+                    <span id="lastUpdate">Cập nhật: --:--:--</span>
+                </div>
+            </div>
+
+            <div id="chartContainer" class="flex-1 w-full min-h-[500px]"></div>
         </div>
     </main>
 
@@ -333,6 +370,9 @@
                 this.lastUpdateTime = null;
                 this.voteChart = null;
                 this.chartMode = 'gap';
+
+                this.events = [];
+                this.lastProcessedEventIndex = 0;
 
                 this.nomineeData = {
                     "w27-83": { name: "Anh Trai Vượt Ngàn Chông Gai - Techcombank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/29/photo2025-11-2817-17-50-2-17643880977201950529428.jpg", color: "#e74c3c" },
@@ -358,6 +398,7 @@
                 this.chartContainer = document.getElementById('chartContainer');
                 this.rankingTitle = document.getElementById('rankingTitle');
                 this.lastUpdateSpan = document.getElementById('lastUpdate');
+                this.eventLogContainer = document.getElementById('eventLogContainer');
 
                 this.modeBtns = document.querySelectorAll('[data-mode]');
                 this.modeBtns.forEach(btn => {
@@ -373,10 +414,11 @@
                 });
 
                 this.voteChart = echarts.init(this.chartContainer);
-
+                
                 window.addEventListener('resize', () => {
                     this.voteChart.resize();
                     this.updateChart();
+                    this.renderEventVisualizer();
                 });
             }
 
@@ -395,6 +437,7 @@
                     const rawJson = await response.json();
 
                     this.processNewData(rawJson.vote_history);
+                    this.analyzeEvents();
 
                     if (rawJson.last_update_time) {
                         this.lastUpdateTime = rawJson.last_update_time;
@@ -402,6 +445,7 @@
                     }
 
                     this.updateRankingList();
+                    this.renderEventVisualizer();
                     requestAnimationFrame(() => this.updateChart());
                 } catch (error) {
                     console.error('Error fetching history:', error);
@@ -455,6 +499,105 @@
                         });
                     }
                 });
+            }
+
+            analyzeEvents() {
+                const timestamps = this.rawData.timestamps;
+                const nomineeIds = Object.keys(this.nomineeData);
+                
+                let startIndex = Math.max(1, this.lastProcessedEventIndex);
+                
+                for (let i = startIndex; i < timestamps.length; i++) {
+                    const currentTime = timestamps[i];
+                    
+                    const currentVotes = {};
+                    const prevVotes = {};
+                    let maxVoteCurrent = 0;
+                    
+                    nomineeIds.forEach(id => {
+                        currentVotes[id] = this.rawData.series[id][i];
+                        prevVotes[id] = this.rawData.series[id][i-1];
+                        if (currentVotes[id] > maxVoteCurrent) maxVoteCurrent = currentVotes[id];
+                    });
+
+                    const currentRanking = [...nomineeIds].sort((a, b) => currentVotes[b] - currentVotes[a]);
+                    const prevRanking = [...nomineeIds].sort((a, b) => prevVotes[b] - prevVotes[a]);
+
+                    currentRanking.forEach((id, rankIndex) => {
+                        const prevRankIndex = prevRanking.indexOf(id);
+                        if (rankIndex !== prevRankIndex) {
+                            if (rankIndex < prevRankIndex) {
+                                const gap = id === currentRanking[0] ? 0 : maxVoteCurrent - currentVotes[id];
+                                this.events.unshift({
+                                    type: 'rank_change',
+                                    timestamp: currentTime,
+                                    nomineeId: id,
+                                    detail: `Vươn lên vị trí #${rankIndex + 1}`,
+                                    gap: gap
+                                });
+                            }
+                        }
+                    });
+
+                    nomineeIds.forEach(id => {
+                        const currV = currentVotes[id];
+                        const prevV = prevVotes[id];
+                        if (Math.floor(currV / 100000) > Math.floor(prevV / 100000)) {
+                             const gap = id === currentRanking[0] ? 0 : maxVoteCurrent - currV;
+                             this.events.unshift({
+                                type: 'milestone',
+                                timestamp: currentTime,
+                                nomineeId: id,
+                                detail: `Cán mốc ${Math.floor(currV / 100000) * 100}K vote`,
+                                gap: gap
+                            });
+                        }
+                    });
+                }
+                
+                this.lastProcessedEventIndex = timestamps.length;
+                if (this.events.length > 100) {
+                    this.events = this.events.slice(0, 100);
+                }
+            }
+
+            renderEventVisualizer() {
+                let html = '';
+                if (this.events.length === 0) {
+                    html = '<div class="text-center text-[#5b3612]/50 py-4 text-sm">Chưa có sự kiện nổi bật</div>';
+                } else {
+                    this.events.forEach(e => {
+                        const nominee = this.nomineeData[e.nomineeId];
+                        const [datePart, timePart] = e.timestamp.split(' ');
+                        
+                        let icon, isTop1 = false;
+                        if (e.detail.includes('vị trí #1')) {
+                            icon = '<i class="fas fa-crown text-yellow-500"></i>';
+                            isTop1 = true;
+                        } else {
+                            icon = e.type === 'rank_change' ? '<i class="fas fa-arrow-up text-green-600"></i>' : '<i class="fas fa-flag text-red-600"></i>';
+                        }
+                        
+                        const itemBg = isTop1 ? 'background: rgba(255, 215, 0, 0.1);' : '';
+
+                        html += `
+                            <div class="event-item" style="${itemBg}">
+                                <div class="event-time font-bold">
+                                    <div>${datePart}</div>
+                                    <div>${timePart}</div>
+                                </div>
+                                <div class="event-detail">
+                                    <div class="event-desc text-sm">
+                                        <span class="font-bold" style="color: ${nominee.color};">${nominee.name}</span>
+                                        <span class="mx-1">${icon}</span>
+                                        ${e.detail}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                this.eventLogContainer.innerHTML = html;
             }
 
             updateRankingList() {
@@ -614,7 +757,7 @@
                     },
                     grid: {
                         left: '0%',
-                        right: isMobile ? '18%' : '9%',
+                        right: isMobile ? '18%' : '5%',
                         bottom: 90,
                         top: '2%',
                         containLabel: true
