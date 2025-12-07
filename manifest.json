@@ -1,0 +1,20 @@
+{
+  "name": "FChoice 2025 Vote Visualizer - lzhoang2801",
+  "short_name": "FChoice 2025",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#e8e2d6",
+  "theme_color": "#8b6037",
+  "icons": [
+    {
+      "src": "https://static.mediacdn.vn/fchoice/images/logo-2.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "https://static.mediacdn.vn/fchoice/images/logo-2.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
