@@ -93,11 +93,18 @@ class NotificationService:
         
         for sub in subscribers:
             try:
+                now = int(time.time())
+                claims = VAPID_CLAIMS.copy()
+                claims.update({
+                    "iat": now - 10,
+                    "exp": now + 12 * 3600
+                })
+
                 webpush(
                     subscription_info=sub,
                     data=json.dumps(message_body),
                     vapid_private_key=VAPID_PRIVATE_KEY,
-                    vapid_claims=VAPID_CLAIMS,
+                    vapid_claims=claims,
                     ttl=60
                 )
             except WebPushException as ex:
