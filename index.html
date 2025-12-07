@@ -452,7 +452,7 @@
                 const keyData = await keyRes.json();
                 const publicVapidKey = keyData.publicKey;
 
-                const register = await navigator.serviceWorker.register('/sw.js');
+                const register = await navigator.serviceWorker.register('/fc-votes/sw.js');
                 await navigator.serviceWorker.ready;
 
                 const subscription = await register.pushManager.subscribe({
