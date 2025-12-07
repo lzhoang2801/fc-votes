@@ -296,8 +296,9 @@
                             <h3 class="text-lg sm:text-xl text-[#392109] font-medium uppercase">Biểu đồ diễn biến</h3>
                             <div class="flex items-center gap-2 flex-wrap">
                                 <div class="mode-switcher">
-                                    <button class="mode-btn active" data-mode="total">Tổng vote</button>
+                                    <button class="mode-btn" data-mode="total">Tổng vote</button>
                                     <button class="mode-btn" data-mode="delta">Tăng thêm</button>
+                                    <button class="mode-btn active" data-mode="gap">Khoảng cách</button>
                                 </div>
                             </div>
                         </div>
@@ -331,7 +332,7 @@
                 };
                 this.lastUpdateTime = null;
                 this.voteChart = null;
-                this.chartMode = 'total';
+                this.chartMode = 'gap';
 
                 this.nomineeData = {
                     "w27-83": { name: "Anh Trai Vượt Ngàn Chông Gai - Techcombank", image: "https://event.mediacdn.vn/zoom/80_80/257767050295742464/image/fc/2025/11/29/photo2025-11-2817-17-50-2-17643880977201950529428.jpg", color: "#e74c3c" },
@@ -549,6 +550,20 @@
                             deltaData[i] = Math.max(0, data[i] - data[i - 1]);
                         }
                         data = deltaData;
+                    } else if (this.chartMode === 'gap') {
+                        const gapData = new Array(data.length);
+                        
+                        for (let i = 0; i < data.length; i++) {
+                            let maxVoteAtTime = 0;
+                            nomineeIds.forEach(nId => {
+                                const val = displaySeries[nId][i] || 0;
+                                if (val > maxVoteAtTime) maxVoteAtTime = val;
+                            });
+                            
+                            const currentVote = data[i] || 0;
+                            gapData[i] = currentVote - maxVoteAtTime; 
+                        }
+                        data = gapData;
                     }
 
                     const isLargeData = data.length > 1000;
@@ -563,7 +578,14 @@
                         itemStyle: { color: this.nomineeData[id].color },
                         lineStyle: { width: this.chartMode === 'total' ? 3 : 2 },
                         areaStyle: this.chartMode === 'delta' ? { opacity: 0.2 } : undefined,
-                        emphasis: { focus: 'series' }
+                        emphasis: { focus: 'series' },
+                        endLabel: {
+                            show: true,
+                            formatter: (params) => params.value.toLocaleString(),
+                            color: this.nomineeData[id].color,
+                            fontWeight: 'bold',
+                            fontSize: isMobile ? 10 : 12
+                        }
                     };
                 });
 
@@ -591,8 +613,8 @@
                         type: 'scroll'
                     },
                     grid: {
-                        left: '1%',
-                        right: '1%',
+                        left: '0%',
+                        right: isMobile ? '18%' : '9%',
                         bottom: 90,
                         top: '2%',
                         containLabel: true
