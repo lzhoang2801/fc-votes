@@ -346,6 +346,7 @@
                 this.eventLogContainer = document.getElementById('eventLogContainer');
                 this.notifyBtn = document.getElementById('notifyBtn');
                 this.popupNotifyBtn = document.getElementById('popupNotifyBtn');
+                this.popupNotifyDesc = document.getElementById('popupNotifyDesc');
 
                 this.instructionModal = document.getElementById('instructionModal');
                 this.instructionContent = document.getElementById('instructionContent');
@@ -584,16 +585,21 @@
 
                 if (this.popupNotifyBtn) {
                     if (this.notificationsEnabled) {
-                        this.popupNotifyBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Đã bật thông báo';
-                        this.popupNotifyBtn.classList.add('opacity-75', 'cursor-default');
-                    } else if (Notification.permission === 'denied') {
-                         this.popupNotifyBtn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Bị chặn - Mở lại';
-                         this.popupNotifyBtn.classList.remove('opacity-75', 'cursor-default', 'bg-[#d3ad49]', 'hover:bg-[#b08d35]', 'text-[#5b3612]');
-                         this.popupNotifyBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white', 'opacity-75', 'cursor-default');
+                        this.popupNotifyBtn.style.display = 'none';
+                        if (this.popupNotifyDesc) this.popupNotifyDesc.style.display = 'none';
                     } else {
-                        this.popupNotifyBtn.innerHTML = '<i class="fas fa-bell mr-2"></i> Bật thông báo';
-                        this.popupNotifyBtn.classList.remove('opacity-75', 'cursor-default', 'bg-red-600', 'hover:bg-red-700', 'text-white', 'bg-[#d3ad49]', 'hover:bg-[#b08d35]', 'text-[#5b3612]');
-                        this.popupNotifyBtn.classList.add('bg-[#d3ad49]', 'hover:bg-[#b08d35]', 'text-[#5b3612]', 'opacity-75', 'cursor-default');
+                        this.popupNotifyBtn.style.display = '';
+                        if (this.popupNotifyDesc) this.popupNotifyDesc.style.display = '';
+
+                        if (Notification.permission === 'denied') {
+                             this.popupNotifyBtn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Bị chặn - Mở lại';
+                             this.popupNotifyBtn.classList.remove('bg-[#d3ad49]', 'hover:bg-[#b08d35]', 'text-[#5b3612]');
+                             this.popupNotifyBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white');
+                        } else {
+                            this.popupNotifyBtn.innerHTML = '<i class="fas fa-bell mr-2"></i> Bật thông báo';
+                            this.popupNotifyBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'text-white', 'opacity-75', 'cursor-default');
+                            this.popupNotifyBtn.classList.add('bg-[#d3ad49]', 'hover:bg-[#b08d35]', 'text-[#5b3612]');
+                        }
                     }
                 }
             }
@@ -1060,7 +1066,7 @@
                         để giữ vững vị trí dẫn đầu.
                     </p>
 
-                    <p class="text-xs sm:text-sm leading-relaxed">
+                    <p id="popupNotifyDesc" class="text-xs sm:text-sm leading-relaxed">
                         Để tiện cho việc cập nhật thông tin, Gai con có thể bật thông báo để nhận thông báo khi có sự kiện mới và cập nhật biến động vote mỗi 10 phút nhé.
                     </p>
 
@@ -1099,11 +1105,11 @@
                         <span>Nhấn vào biểu tượng <strong>Cài đặt</strong> <i class="fas fa-sliders-h text-xs mx-1"></i> hoặc <strong>Ổ khóa</strong> <i class="fas fa-lock text-xs mx-1"></i> trên thanh địa chỉ.</span>
                     </div>
                     <div class="flex items-start gap-3">
-                         <span class="flex-shrink-0 w-6 h-6 rounded-full bg-[#d3ad49] text-[#5b3612] flex items-center justify-center font-bold text-xs">2</span>
+                        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-[#d3ad49] text-[#5b3612] flex items-center justify-center font-bold text-xs">2</span>
                         <span>Chọn <strong>Cài đặt trang web</strong> hoặc <strong>Quyền</strong>.</span>
                     </div>
                     <div class="flex items-start gap-3">
-                         <span class="flex-shrink-0 w-6 h-6 rounded-full bg-[#d3ad49] text-[#5b3612] flex items-center justify-center font-bold text-xs">3</span>
+                        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-[#d3ad49] text-[#5b3612] flex items-center justify-center font-bold text-xs">3</span>
                         <span>Tìm mục <strong>Thông báo</strong> và chọn <strong>Cho phép</strong> (Allow).</span>
                     </div>
                 </div>
