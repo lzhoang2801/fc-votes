@@ -963,7 +963,7 @@
 
     <div id="promoPopup"
         class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="relative bg-[#f9f8f4] w-[95%] max-w-[500px] rounded-2xl overflow-hidden shadow-2xl border border-[#d3ad49]/30 transform scale-95 transition-transform duration-300 translate-y-4"
+        <div class="relative bg-[#f9f8f4] w-[95%] max-w-[400px] rounded-2xl overflow-hidden shadow-2xl border border-[#d3ad49]/30 transform scale-95 transition-transform duration-300 translate-y-4"
             id="popupContent">
 
             <button id="closePopup"
@@ -971,28 +971,43 @@
                 <i class="fas fa-times"></i>
             </button>
 
-            <div class="p-8 text-center space-y-4">
-                <div class="text-[#d3ad49] text-4xl mb-2">
-                    <i class="fas fa-exclamation-triangle"></i>
+            <div class="p-0">
+                <div class="bg-[#d32f2f] flex justify-center items-center">
+                    <img id="popupImage" src="images/image_01.jpg" alt="ATVNCG 2024" class="w-full max-h-[200px] object-cover">
                 </div>
 
-                <h3
-                    class="text-xl sm:text-2xl font-bold text-[#5b3612] uppercase font-['SVN-Kallisto'] leading-tight">
-                    Xin lỗi #GaiCon rất nhiều vì đã lỡ tay làm mất dữ liệu đã tracking được trước đó.
-                </h3>
+                <div class="p-4 text-center space-y-3">
+                    <h3
+                        class="text-lg sm:text-xl font-bold text-[#5b3612] uppercase font-['SVN-Kallisto'] leading-tight">
+                        Top 1 đã đến tay cho kim chủ Tech cùng ATVNCG
+                    </h3>
 
-                <p class="text-sm sm:text-base leading-relaxed text-[#5b3612]">
-                    Do sơ xuất không mong muốn cho việc cập nhật tính năng đẩy thông báo đến mỗi khi có sự kiện mới và cập nhật lượng vote mỗi 10p cho mọi người
-                </p>
+                    <p class="text-xs sm:text-sm leading-relaxed">
+                        Gai con hãy tiếp tục vote tại <span
+                            class="font-bold text-[#d3ad49]">FChoice</span> ở hai hạng mục
+                        <br>
+                        <span class="font-bold">"Ngân hàng Kim chủ của năm"</span><br>
+                        và <span class="font-bold">"Cổ phiếu ngân hàng được nhà đầu tư yêu thích của năm"</span>
+                        để giữ vững vị trí dẫn đầu.
+                    </p>
 
-                <div class="pt-4">
-                    <button id="popupNotifyBtn"
-                        class="inline-flex items-center bg-[#d3ad49] hover:bg-[#b08d35] text-[#5b3612] font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 uppercase tracking-wider">
-                        <i class="fas fa-bell mr-2"></i> Bật thông báo
-                    </button>
+                    <p class="text-xs sm:text-sm leading-relaxed">
+                        Để tiện cho việc cập nhật thông tin, Gai con có thể bật thông báo để nhận thông báo khi có sự kiện mới và cập nhật biến động vote mỗi 10 phút nhé.
+                    </p>
+
+                    <div class="pt-2 flex flex-col sm:flex-row justify-center items-center gap-3">
+                        <a href="https://fchoice.vn" target="_blank"
+                            class="inline-block bg-[#d3ad49] hover:bg-[#b08d35] text-[#5b3612] font-bold py-2 px-6 rounded-full text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 uppercase tracking-wider text-center w-full sm:w-auto">
+                            Vote Ngay
+                        </a>
+                        <button id="popupNotifyBtn"
+                            class="inline-flex items-center justify-center bg-[#d3ad49] hover:bg-[#b08d35] text-[#5b3612] font-bold py-2 px-6 rounded-full text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 uppercase tracking-wider w-full sm:w-auto">
+                            <i class="fas fa-bell mr-2"></i> Bật thông báo
+                        </button>
+                    </div>
+
+                    <p class="text-sm text-[#5b3612]/60 font-medium italic">#camonvidaden</p>
                 </div>
-
-                <p class="text-xs text-[#5b3612]/60 font-medium italic">Xin lỗi vì trải nghiệm không tốt. #camonvidaden</p>
             </div>
         </div>
     </div>
@@ -1002,6 +1017,20 @@
             const popup = document.getElementById('promoPopup');
             const popupContent = document.getElementById('popupContent');
             const closeBtn = document.getElementById('closePopup');
+            const popupImage = document.getElementById('popupImage');
+
+            const promoImages = [
+                'image_01.jpg',
+                'image_02.jpg',
+                'image_03.jpg',
+                'image_04.jpg',
+                'image_05.png'
+            ];
+
+            if (promoImages.length > 0) {
+                const randomImage = promoImages[Math.floor(Math.random() * promoImages.length)];
+                popupImage.src = `images/${randomImage}`;
+            }
 
             setTimeout(() => {
                 popup.classList.remove('opacity-0', 'pointer-events-none');
