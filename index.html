@@ -306,7 +306,7 @@
     <script>
         class VoteVisualizer {
             constructor() {
-                this.apiUrl = 'https://vasp-pain.org/get_votes';
+                this.apiUrl = 'https://github.com/lzhoang2801/fc-votes/releases/download/2025/vote_history.json';
                 this.rawData = {
                     timestamps: [],
                     series: {}
@@ -335,7 +335,7 @@
                 this.initializeElements();
                 this.fetchVoteHistory();
 
-                setInterval(() => this.fetchVoteHistory(), 10000);
+                //setInterval(() => this.fetchVoteHistory(), 10000);
             }
 
             initializeElements() {
@@ -608,7 +608,7 @@
                 try {
                     let url = this.apiUrl;
                     if (this.rawData.timestamps.length > 0 && this.lastUpdateTime) {
-                        url += `?last_updated=${encodeURIComponent(this.lastUpdateTime)}`;
+                        //url += `?last_updated=${encodeURIComponent(this.lastUpdateTime)}`;
                     } else {
                         if (this.rawData.timestamps.length === 0) {
                             this.rankingList.innerHTML = '<div class="text-center text-white/60 py-10"><i class="fas fa-spinner fa-spin text-2xl"></i><br>Đang cập nhật...</div>';
